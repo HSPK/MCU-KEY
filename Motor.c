@@ -11,6 +11,7 @@ void StartMotor(int16 angle);
 void StopMotor();
 void ConfigTmr0(uint8 ms);
 void Init();
+void Delayms(uint8 ms);
 
 sbit keyOut1=P;				//定义输出引脚
 sbit KeyIn1=P;				//定义输入引脚
