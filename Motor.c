@@ -94,6 +94,7 @@ void StopMotor()
 
 void KeyScan()
 {
+	uint8 i;
 	static uint8 keyBuff[]={0xff,0xff,0xff,0xff};
 	keyBuff[0]=(keyBuff[0]<<1)|keyIn1;
 	keyBuff[1]=(keyBuff[1]<<1)|keyIn2;
