@@ -1,8 +1,10 @@
 #include <reg52.h>
+#define SYM_OSC 12000000
 typedef unsigned char uint8;
 typedef unsigned int  uint16;
 typedef char int8;
 typedef int  int16;
+
 
 void KeyScan();
 void KeyAction(uint8 keyCode);
@@ -47,7 +49,7 @@ void Init()
 void ConfigTmr0(uint8 ms)
 {
 	uint16 load;
-	load=65536-(12000000/12/1000)*ms;
+	load=65536-(SYM_OSC/12/1000)*ms;
 	TMOD|=0x01;
 	TMOD&=0xfd;
 	TH0=(uint8)(load>>8);
