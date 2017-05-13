@@ -13,12 +13,17 @@ void ConfigTmr0(uint8 ms);
 void Init();
 void Delayms(uint8 ms);
 
-sbit keyOut1=P;				//定义输出引脚
-sbit KeyIn1=P;				//定义输入引脚
+sbit keyOut1=P1^7;				//定义输出引脚
+sbit KeyIn1=P1^3;				//定义输入引脚
+sbit KeyIn2=P1^2;
+sbit KeyIn3=P1^1;
+sbit KeyIn4=P1^0;
 
 uint8 code keyCodeMap[]={0x01,0x02,0x03,0x04};   //键盘映射值
 uint8 keySta[]={1,1,1,1};  //按键状态
-
+uint8 code motorStep[]={0x01,0x08,0x04,0x02};
+uint8 stepFlag;
+uint8 step_Motor;
 void main()
 {
 	Init();
@@ -85,11 +90,17 @@ void KeyAction(uint8 keyCode)
 
 void StartMotor(int16 angle)
 {
-	
+	uint8 beatNum,j;
+	beatNum=(angle/45);
+	for(i=0;i<beatNum;i++)
+	{
+		P1&=0xf0;
+		P1|=motorStep[step_Motor];
+	}
 }
 void StopMotor()
 {
-
+	
 }
 
 void KeyScan()
@@ -117,4 +128,8 @@ void KeyScan()
 void Tmr0Interrupt() interrupt 1
 {
 	KeyScan();
+	if(stepFlag ++==50)
+	{
+		step_Motor=(step_Motor++)&0x03;
+	}
 }
