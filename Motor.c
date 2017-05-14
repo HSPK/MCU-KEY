@@ -4,7 +4,7 @@ typedef unsigned char uint8;
 typedef unsigned int  uint16;
 typedef char int8;
 typedef int  int16;
-
+typedef long  int32;
 
 void KeyScan();
 void KeyAction(uint8 keyCode);
@@ -23,9 +23,11 @@ sbit KeyIn4=P1^0;
 
 uint8 code keyCodeMap[]={0x01,0x02,0x03,0x04};   //键盘映射值
 uint8 keySta[]={1,1,1,1};  //按键状态
-uint8 code motorStep[]={0x01,0x08,0x04,0x02};
-uint8 stepFlag;
-uint8 step_Motor;
+
+uint8 T0RL,T0RH;
+int32 beatNum;
+
+
 void main()
 {
 	Init();
@@ -50,10 +52,12 @@ void ConfigTmr0(uint8 ms)
 {
 	uint16 load;
 	load=65536-(SYM_OSC/12/1000)*ms;
+	T0RH=(uint8)(load>>8);
+	T0RL=(uint8)(load);
 	TMOD|=0x01;
 	TMOD&=0xfd;
-	TH0=(uint8)(load>>8);
-	TL0=(uint8)load;
+	TH0=T0RH;
+	TL0=T0RL;
 	TR0=1;
 	ET0=1;
 }
@@ -92,17 +96,16 @@ void KeyAction(uint8 keyCode)
 
 void StartMotor(int16 angle)
 {
-	uint8 beatNum,j;
-	beatNum=(angle/45);
-	for(i=0;i<beatNum;i++)
-	{
-		P1&=0xf0;
-		P1|=motorStep[step_Motor];
-	}
+	EA=0;
+	beatNum=(angle*4076)/360;
+	EA=1;
 }
+
 void StopMotor()
 {
-	
+	EA=0;
+	beatNum=0;
+	EA=1;
 }
 
 void KeyScan()
@@ -126,12 +129,39 @@ void KeyScan()
 	}
 }
 
+void TurnMotor()
+{
+	uint8 code motorStep[]={0xe,0xc,0xd,0x9,0xb,0x3,0x7,0x6};
+	static int8 index=0;
+	uint8 tmp;
+	if(beatNum!=0)
+	{
+		tmp=P1;
+		tmp&=0xf0;
+		tmp|=motorStep[index];
+		P1=tmp;
+		
+		if(beatNum>0)
+		{
+			index++;
+			index&=0x07;
+			beatNum--;
+		}
+			
+		if(beatNum<0)
+		{
+			index--;
+			index&=0x07;
+			beatNum++;
+		}
+	}
+}
+
 //定时器0中断  扫描按键
 void Tmr0Interrupt() interrupt 1
 {
+	TH0=T0RH;
+	TL0=T0RL;
 	KeyScan();
-	if(++stepFlag ==50)
-	{
-		step_Motor=(++step_Motor)&0x03;
-	}
+	TurnMotor();
 }
