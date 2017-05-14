@@ -72,7 +72,7 @@ void KeyDriver()
 			{
 				KeyAction(keyCodeMap[i]);//按键动作
 			}
-			keyBac[i]=keySta[i]);
+			keyBac[i]=keySta[i];
 		}
 	}
 }
@@ -130,8 +130,8 @@ void KeyScan()
 void Tmr0Interrupt() interrupt 1
 {
 	KeyScan();
-	if(stepFlag ++==50)
+	if(++stepFlag ==50)
 	{
-		step_Motor=(step_Motor++)&0x03;
+		step_Motor=(++step_Motor)&0x03;
 	}
 }
