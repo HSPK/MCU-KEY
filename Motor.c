@@ -15,17 +15,17 @@ void ConfigTmr0(uint8 ms);
 void Init();
 void Delayms(uint8 ms);
 
-sbit keyOut1=P1^7;				//定义输出引脚
-sbit KeyIn1=P1^3;				//定义输入引脚
-sbit KeyIn2=P1^2;
-sbit KeyIn3=P1^1;
-sbit KeyIn4=P1^0;
+				//定义输出引脚
+sbit keyIn1=P3^0;				//定义输入引脚
+sbit keyIn2=P3^1;
+sbit keyIn3=P3^2;
+sbit keyIn4=P3^3;
 
 uint8 code keyCodeMap[]={0x01,0x02,0x03,0x04};   //键盘映射值
 uint8 keySta[]={1,1,1,1};  //按键状态
 
 uint8 T0RL,T0RH;
-int32 beatNum;
+int32 beatNum=0;
 
 
 void main()
@@ -39,21 +39,22 @@ void main()
 
 void Init()
 {
-	KeyOut1=0;     //按键初始
-	KeyIn1=1;
-	KeyIn2=1;
-	KeyIn3=1;
-	KeyIn4=1;
+	    //按键初始
+	keyIn1=1;
+	keyIn2=1;
+	keyIn3=1;
+	keyIn4=1;
 	EA=1;
-	ConfigTmr0(4);   //定时器0定时4ms
+	P2&=0xfe;
+	ConfigTmr0(2);   //定时器0定时2ms
 }
 
 void ConfigTmr0(uint8 ms)
 {
 	uint16 load;
 	load=65536-(SYM_OSC/12/1000)*ms;
-	T0RH=(uint8)(load>>8);
-	T0RL=(uint8)(load);
+	T0RH=(load>>8);
+	T0RL=(load);
 	TMOD|=0x01;
 	TMOD&=0xfd;
 	TH0=T0RH;
@@ -71,12 +72,13 @@ void KeyDriver()
 	for(i=0;i<4;i++)
 	{
 		if(keySta[i]!=keyBac[i])
-		{
-			if(keyBac[i]==1)
+		{	
+			keyBac[i]=keySta[i];
+			if(keySta[i]==0)
 			{
 				KeyAction(keyCodeMap[i]);//按键动作
 			}
-			keyBac[i]=keySta[i];
+		
 		}
 	}
 }
@@ -86,10 +88,14 @@ void KeyAction(uint8 keyCode)
 {
 	switch(keyCode)
 	{
-		case 0x01:StartMotor(90);break;
-		case 0x02:StartMotor(-90);break;
-		case 0x03:StartMotor(0);break;
-		case 0x04:StopMotor();break;
+		case 0x01:
+			P2=0xfe;StartMotor(300);break;
+		case 0x02:
+			StartMotor(-180);P2=0xfd;break;
+		case 0x03:
+			StartMotor(180);P2=0xf8;break;
+		case 0x04:
+			StopMotor();break;
 		default: StopMotor();
 	}
 }
@@ -97,7 +103,7 @@ void KeyAction(uint8 keyCode)
 void StartMotor(int16 angle)
 {
 	EA=0;
-	beatNum=(angle*4076)/360;
+	beatNum=(angle*4076);
 	EA=1;
 }
 
@@ -118,7 +124,7 @@ void KeyScan()
 	keyBuff[3]=(keyBuff[3]<<1)|keyIn4;
 	for(i=0;i<4;i++)
 	{
-		if((keyBuff[i]&0x0f)==0x00)
+		if((keyBuff[i])==0x00)
 		{
 			keySta[i]=0;
 		}
@@ -131,30 +137,33 @@ void KeyScan()
 
 void TurnMotor()
 {
-	uint8 code motorStep[]={0xe,0xc,0xd,0x9,0xb,0x3,0x7,0x6};
+	uint8 code motorStep[]={0x8,0xc,0x4,0x6,0x2,0x3,0x1,0x9};
 	static int8 index=0;
 	uint8 tmp;
 	if(beatNum!=0)
-	{
-		tmp=P1;
-		tmp&=0xf0;
-		tmp|=motorStep[index];
-		P1=tmp;
-		
+	{	
+	
 		if(beatNum>0)
 		{
 			index++;
 			index&=0x07;
 			beatNum--;
 		}
-			
-		if(beatNum<0)
+		else if(beatNum<0)
 		{
 			index--;
 			index&=0x07;
 			beatNum++;
-		}
+		}		tmp=P1;
+		tmp&=0xf0;
+		tmp|=motorStep[index];
+		P1=tmp;
 	}
+	else 
+	{
+		P1&=0xf0;
+	}
+	
 }
 
 //定时器0中断  扫描按键
